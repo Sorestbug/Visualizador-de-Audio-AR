@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <title>Hernandez_Flores_Juan_Pablo</title>
+        <!-- include three.js library -->
+	    <script src='js/three.js'></script>
+	    <!-- include jsartookit -->
+	    <script src="jsartoolkit5/artoolkit.min.js"></script>
+	    <script src="jsartoolkit5/artoolkit.api.js"></script>
+	    <!-- include threex.artoolkit -->
+	    <script src="threex/threex-artoolkitsource.js"></script>
+	    <script src="threex/threex-artoolkitcontext.js"></script>
+	    <script src="threex/threex-arbasecontrols.js"></script>
+	    <script src="threex/threex-armarkercontrols.js"></script>
+        <script>
+        </script>
+    </head>
+    
+    <body>
+        <script type="module">
+            import * as THREE from './js/three.module.js';
+            import { GLTFLoader } from './js/GLTFLoader.js';
+            import { GUI } from './js/lil-gui.module.min.js';
+            import { FontLoader } from './js/FontLoader.js';
+	        import { TextGeometry } from './js/TextGeometry.js';
+
+            var arToolkitSource, arToolkitContext; 
+
+            var markerRoot1;
+
+            var mesh1;
+
+            
+        //Crear scene/Definir Fondo
+        var scene = new THREE.Scene(); //Crear scene
+        let ambientLight = new THREE.AmbientLight( 0xcccccc, 1.0 );
+	    scene.add( ambientLight );
+
+
+        //Crear camara
+        var Camara = new THREE.Camera();
+        scene.add(Camara);
+       
+        //Crear Render
+        var Render = new THREE.WebGLRenderer();
+        Render.setClearColor(new THREE.Color('lightgrey'), 0)
+        Render.setSize( 640, 480 );
+        Render.domElement.style.position = 'absolute'
+        Render.domElement.style.top = '0px'
+        Render.domElement.style.left = '0px'
+	    document.body.appendChild(  Render.domElement );
+
+        
+	////////////////////////////////////////////////////////////
+	// setup arToolkitSource
+	////////////////////////////////////////////////////////////
+
+	arToolkitSource = new THREEx.ArToolkitSource({
+		sourceType : 'webcam',
+	});
+
+	function onResize()
+	{
+		arToolkitSource.onResize()	
+		arToolkitSource.copySizeTo(Render.domElement)	
+		if ( arToolkitContext.arController !== null )
+		{
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
+		}	
+	}
+
+	arToolkitSource.init(function onReady(){
+		onResize()
+	});
+	
+	// handle resize event
+	window.addEventListener('resize', function(){
+		onResize()
+	});
+	
+	////////////////////////////////////////////////////////////
+	// setup arToolkitContext
+	////////////////////////////////////////////////////////////	
+
+	// create atToolkitContext
+	arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl: 'data/camera_para.dat',
+		detectionMode: 'mono'
+	});
+	
+	// copy projection matrix to camera when initialization complete
+	arToolkitContext.init( function onCompleted(){
+		Camara.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	});
+
+	////////////////////////////////////////////////////////////
+	// setup markerRoots
+	////////////////////////////////////////////////////////////
+
+
+	
+	function onProgress(xhr) { console.log( (xhr.loaded / xhr.total * 100) + '% loaded' ); }
+	function onError(xhr) { console.log( 'An error happened' ); }
+
+
+        //Aleatorio
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max);}
+        var cancionAleatoria = getRandomInt(4);
+        //cancionAleatoria=3;
+            switch(cancionAleatoria) {
+            case 0:
+                var camino = './Recursos/Connect.mp3';
+                var colores =0xff07d6;
+                var Titulo = "Visualizador\nSonando: Connect\n -JPHF";
+                break;
+            case 1:
+                var camino = './Recursos/Derezzed.mp3';
+                var colores =0x074fcd;
+                var Titulo = "Visualizador\nSonando: Derezzed\n -JPHF";
+                break;
+            case 2:
+                var camino = './Recursos/RunningAway.mp3';
+                var colores =0x4ded0c;
+                var Titulo = "Visualizador\nSonando: Running Away\n -JPHF";
+                break;
+            case 3:
+                var camino = './Recursos/OneLastKiss.mp3';
+                var colores =0x7b00fe;
+                var Titulo = "Visualizador\nSonando: One Last Kiss\n -JPHF";
+                break;   
+            default:
+            console.log('error');}
+
+ 
+        //Añade Musica
+        const listener = new THREE.AudioListener();
+        Camara.add( listener );
+        const musica = new THREE.PositionalAudio( listener );
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load( camino, function( buffer ) {
+        musica.setBuffer( buffer );
+	    musica.setLoop( true );
+	    musica.setVolume( 1 ); 
+        musica.setRefDistance(30);
+        });
+        const analyser = new THREE.AudioAnalyser( musica, 32 );
+
+        //Botones
+	    const gui = new GUI();
+        const audioControls = {
+            play: function() {
+                musica.play();
+            },
+            pause: function() {
+            musica.pause();
+            }
+        };
+        gui.add(audioControls, 'play');
+        gui.add(audioControls, 'pause');
+
+      //Codigo Centro
+      var centro = new THREE.Mesh( new THREE.BoxGeometry(.001,.001,.001),
+            new THREE.MeshBasicMaterial({color: colores}));
+        centro.position.x = 0; //-58/58
+        centro.position.y = 0; //1
+        centro.position.z = 0; //4/-25
+        scene.add(centro);
+        centro.add(musica);
+
+
+            //Codigo Cita
+            var Cita;
+            const loader1 = new FontLoader();
+            loader1.load( './Recursos/GothamBlack.json', function ( GothamBlack ) {//Cargamos la Fuente
+
+                const Tgeo = new TextGeometry( Titulo, {//Variables Texto
+                font: GothamBlack,
+		        size: .06,
+		        height: .04,
+		        curveSegments: .1,
+		        bevelEnabled: true,
+		        bevelThickness: 0,
+		        bevelSize: 0,
+		        bevelOffset: 0,
+		        bevelSegments: 1
+                });
+
+                Cita= new THREE.Mesh(Tgeo,[//Tipo de Material de las letras
+                new THREE.MeshBasicMaterial({color: colores}),//Color enfrente
+                new THREE.MeshBasicMaterial({color: 0x000000})//Color Lateral   
+                ]);
+
+                aux.add(Cita);
+                Cita.position.set(-.3,0,0);
+                Cita.castShadow= true;
+                Cita.reciveShadow= true;
+            });
+
+        //Codigo Aux
+        var aux = new THREE.Mesh( new THREE.BoxGeometry(.001,.001,.001),
+        new THREE.MeshBasicMaterial({color: colores}));
+        aux.position.x = 0; //-58/58
+        aux.position.y = .8; //1
+        aux.position.z = 0; //4/-25
+        centro.add(aux);
+
+        //BOX
+        let loadedModel;
+        const glftLoader = new GLTFLoader();
+        glftLoader.load('./Recursos/Box.glb', (BOX) => {
+            /*while(gltfScene.scene.children.length){ //Muestra todas las funciones del Objeto
+                console.log(gltfScene.scene.children[0]);
+                scene.add(gltfScene.scene.children[0]);
+            }*/
+        loadedModel = BOX;
+        //BOX.scene.rotation.x = Math.PI*4.5;
+        BOX.scene.position.set(0,0,0);
+        BOX.scene.scale.set(.05, .05, .05);
+        centro.add(BOX.scene);
+        });
+
+
+        //Speaker1
+        let loadedModel1;
+        const glftLoader1 = new GLTFLoader();
+        glftLoader1.load('./Recursos/Speaker.glb', (Speaker1) => {
+        loadedModel1 = Speaker1;
+        //Speaker1.scene.rotation.x = Math.PI*4.5;
+        Speaker1.scene.position.set(-.32,0,0);
+        Speaker1.scene.scale.set(.15, .15, .15);
+        centro.add(Speaker1.scene);
+        });
+
+        //Speaker2
+        var Speaker2X=+40;
+        var Speaker2Y=0;
+        var Speaker2Z=-3;
+        let loadedModel2;
+        const glftLoader2 = new GLTFLoader();
+        glftLoader2.load('./Recursos/Speaker.glb', (Speaker2) => {
+        loadedModel2 = Speaker2;
+        //Speaker2.scene.rotation.x = Math.PI*4.5;
+        Speaker2.scene.position.set(.34,0,0);
+        Speaker2.scene.scale.set(.15, .15, .15);
+        centro.add(Speaker2.scene);
+        });
+
+        //Codigo Pared
+        var Pared = new THREE.Mesh( new THREE.BoxGeometry(.7,.01,.5),
+            new THREE.MeshBasicMaterial(
+                {map : new THREE.TextureLoader().load('Recursos/Lineas.png')}));
+        Pared.position.set(0,.28,0);
+        Pared.rotation.x =Math.PI*4.5;
+        centro.add(Pared);
+
+        var PosicionX= -.18;
+        var tam=.01;
+        var separacion= .025;
+
+        //Codigo Nuevo A
+        var NuevoA = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoA.position.set(PosicionX,.28,.01);
+        centro.add(NuevoA);
+        NuevoA.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo B
+        var NuevoB = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoB.position.set(PosicionX,.28,.01);
+        centro.add(NuevoB);
+        NuevoB.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo C
+        var NuevoC = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoC.position.set(PosicionX,.28,.01);
+        centro.add(NuevoC);
+        NuevoC.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo D
+        var NuevoD = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoD.position.set(PosicionX,.28,.01);
+        centro.add(NuevoD);
+        NuevoD.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo E
+        var NuevoE = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoE.position.set(PosicionX,.28,.01);
+        centro.add(NuevoE);
+        NuevoE.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo F
+        var NuevoF = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoF.position.set(PosicionX,.28,.01);
+        centro.add(NuevoF);
+        NuevoF.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo G
+        var NuevoG = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoG.position.set(PosicionX,.28,.01);
+        centro.add(NuevoG);
+        NuevoG.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo H
+        var NuevoH = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoH.position.set(PosicionX,.28,.01);
+        centro.add(NuevoH);
+        NuevoH.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo I
+        var NuevoI = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoI.position.set(PosicionX,.28,.01);
+        centro.add(NuevoI);
+        NuevoI.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo J
+        var NuevoJ = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoJ.position.set(PosicionX,.28,.01);
+        centro.add(NuevoJ);
+        NuevoJ.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo K
+        var NuevoK = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoK.position.set(PosicionX,.28,.01);
+        centro.add(NuevoK);
+        NuevoK.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo L
+        var NuevoL = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoL.position.set(PosicionX,.28,.01);
+        centro.add(NuevoL);
+        NuevoL.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo M
+        var NuevoM = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoM.position.set(PosicionX,.28,.01);
+        centro.add(NuevoM);
+        NuevoM.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo N
+        var NuevoN = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoN.position.set(PosicionX,.28,.01);
+        centro.add(NuevoN);
+        NuevoN.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo O
+        var NuevoO = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoO.position.set(PosicionX,.28,.01);
+        centro.add(NuevoO);
+        NuevoO.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;
+
+        //Codigo Nuevo P
+        var NuevoP = new THREE.Mesh( new THREE.BoxGeometry(tam,tam,.1),
+        new THREE.MeshBasicMaterial({color: colores}));
+        NuevoP.position.set(PosicionX,.28,.01);
+        centro.add(NuevoP);
+        NuevoP.rotation.x =Math.PI*4.5;
+        PosicionX+=separacion;   
+
+    // build markerControls
+	markerRoot1 = new THREE.Group();
+	scene.add(markerRoot1);
+	let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: 'pattern', patternUrl: "data/hiro.patt",
+	})
+    markerRoot1.add(centro);
+       
+
+    var a=0;
+    var b=0;
+    var c=0;
+    var d=0;
+    var e=0;
+    var f=0;
+    var g=0;
+    var h=0;
+    var i=0;
+    var j=0;
+    var k=0;
+    var l=0;
+    var m=0;
+    var n=0;
+    var o=0;
+    var p=0;
+
+    var div=60;
+//var controladorData= [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p];
+
+        function Animacion(){//Animacion
+
+            //Controlador Titulo
+            aux.rotateY(0.01);
+       
+            var controladorData=analyser.getFrequencyData();
+
+            //Controlador A
+            a=controladorData[14]/div;
+            NuevoA.scale.z=a;
+
+            //Controlador B
+            b=controladorData[12]/div;
+            NuevoB.scale.z=b;
+
+            //Controlador C
+            c=controladorData[10]/div;
+            NuevoC.scale.z=c;
+
+            //Controlador D
+            d=controladorData[8]/div;
+            NuevoD.scale.z=d;
+
+            //Controlador E
+            e=controladorData[6]/div;
+            NuevoE.scale.z=e;
+
+            //Controlador F
+            f=controladorData[4]/div;
+            NuevoF.scale.z=f;
+
+            //Controlador G
+            g=controladorData[2]/div;
+            NuevoG.scale.z=g;
+
+            //Controlador H
+            h=controladorData[0]/div;
+            NuevoH.scale.z=h;
+
+            //Controlador I
+            i=controladorData[1]/div;
+            NuevoI.scale.z=i;
+
+            //Controlador J
+            j=controladorData[3]/div;
+            NuevoJ.scale.z=j;
+
+            //Controlador K
+            k=controladorData[5]/div;
+            NuevoK.scale.z=k;
+
+            //Controlador L
+            l=controladorData[7]/div;
+            NuevoL.scale.z=l;
+
+            //Controlador M
+            m=controladorData[9]/div;
+            NuevoM.scale.z=m;
+
+            //Controlador N
+            n=controladorData[11]/div;
+            NuevoN.scale.z=n;
+
+            //Controlador O
+            o=controladorData[13]/div;
+            NuevoO.scale.z=o;
+
+            //Controlador P
+            p=controladorData[15]/div;
+            NuevoP.scale.z=p;
+            
+            //console.log(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p);
+            requestAnimationFrame(Animacion);//Creamos el Frame
+
+            // update artoolkit on every frame
+	        if ( arToolkitSource.ready !== false )
+		        arToolkitContext.update( arToolkitSource.domElement );
+
+
+            Render.render(scene,Camara);//Se crea Render
+        }
+        Animacion();
+        
+        </script>
+	</body>
+</html>
